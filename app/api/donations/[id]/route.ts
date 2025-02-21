@@ -1,10 +1,87 @@
 // path: app/api/donations/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import FoodDonation from "@/models/FoodDonationModel";
+import FoodDonation, {IFoodDonation} from "@/models/FoodDonationModel";
 import { getServerSession } from "next-auth";
-// import authOptions from "@/lib/authOptions"; // Adjust the path if needed
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "donor") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    const { id } = params;
+
+    // Find the donation by ID
+    const donation = await FoodDonation.findById(id);
+
+    if (!donation) {
+      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+    }
+
+    // Ensure the donor is the owner
+    if (donation.donor_id.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    return NextResponse.json(donation);
+  } catch (error) {
+    console.error("Error fetching donation:", error);
+    return NextResponse.json({ error: "Failed to fetch donation" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "donor") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    const { id } = params;
+    const data = await request.json();
+
+    // Find the donation
+    const donation = await FoodDonation.findById(id);
+    if (!donation) {
+      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+    }
+
+    // Ensure the donor is the owner
+    if (donation.donor_id.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    // Update allowed fields
+    const updateFields: (keyof IFoodDonation)[] = [
+      "title",
+      "description",
+      "quantity",
+      "food_type",
+      "pickup_address",
+      "expiry_date",
+      "images",
+    ];
+
+    updateFields.forEach((field) => {
+      if (data[field] !== undefined) {
+        (donation[field] as any) = data[field]; // Type assertion to avoid TypeScript error
+      }
+    });
+
+    await donation.save();
+    return NextResponse.json(donation);
+  } catch (error) {
+    console.error("Error updating donation:", error);
+    return NextResponse.json({ error: "Failed to update donation" }, { status: 500 });
+  }
+}
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   await connectMongo();
@@ -31,5 +108,37 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(updatedDonation);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update donation" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "donor") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    const { id } = params;
+
+    // Find the donation
+    const donation = await FoodDonation.findById(id);
+    if (!donation) {
+      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+    }
+
+    // Ensure the donor is the owner
+    if (donation.donor_id.toString() !== session.user.id) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    // Delete the donation
+    await FoodDonation.findByIdAndDelete(id);
+
+    return NextResponse.json({ message: "Donation deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting donation:", error);
+    return NextResponse.json({ error: "Failed to delete donation" }, { status: 500 });
   }
 }

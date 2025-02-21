@@ -42,3 +42,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create donation" }, { status: 500 });
   }
 }
+
+
+export async function GET(request: NextRequest) {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "donor") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    // Fetch all donations by the logged-in donor
+    const donations = await FoodDonation.find({ donor_id: session.user.id });
+
+    return NextResponse.json(donations);
+  } catch (error) {
+    console.error("Error fetching donations:", error);
+    return NextResponse.json({ error: "Failed to fetch donations" }, { status: 500 });
+  }
+}

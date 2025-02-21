@@ -6,7 +6,7 @@ export interface IFoodDonation extends Document {
   donor_id: Types.ObjectId;
   food_type: string;
   quantity: number;
-  pickup_location: string;
+  pickup_address: string;
   status: "available" | "claimed" | "delivered";
   expiry_date: Date;
   images: string[];
@@ -31,5 +31,5 @@ const FoodDonationSchema = new mongoose.Schema(
 );
 
 const FoodDonation: Model<IFoodDonation> =
-  mongoose.models.FoodDonation || mongoose.model<IFoodDonation>("Food_Donation", FoodDonationSchema);
+  mongoose.models.Food_Donation || mongoose.model<IFoodDonation>("Food_Donation", FoodDonationSchema);
 export default FoodDonation;
