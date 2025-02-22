@@ -17,7 +17,11 @@ const UserSchema: Schema<IUser> = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ["donor", "volunteer", "shelter"], required: true },
+  role: {
+    type: String,
+    enum: ["donor", "volunteer", "shelter"],
+    required: true,
+  },
   phone: { type: String },
   location: { type: String },
   createdAt: { type: Date, default: Date.now },
@@ -35,9 +39,12 @@ UserSchema.pre("save", async function (next) {
 });
 
 // Validate password
-UserSchema.methods.validatePassword = async function (password: string): Promise<boolean> {
+UserSchema.methods.validatePassword = async function (
+  password: string
+): Promise<boolean> {
   return argon2.verify(this.password, password);
 };
 
-const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+const User: Model<IUser> =
+  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 export default User;

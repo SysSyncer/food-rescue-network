@@ -32,6 +32,7 @@ export default function SignUpPage() {
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 

@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: { params: { id: string } }) {
   await connectMongo();
   const session = await getServerSession(authOptions);
 
@@ -44,11 +44,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   try {
+    const { params } = context;
     const { id } = params;
     const data = await request.json();
+    console.log(data);
 
-    // Find the donation
+    // Find the existing donation
     const donation = await FoodDonation.findById(id);
+    console.log(donation)
     if (!donation) {
       return NextResponse.json({ error: "Donation not found" }, { status: 404 });
     }
@@ -58,8 +61,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Update allowed fields
-    const updateFields: (keyof IFoodDonation)[] = [
+    // Allowed fields for update
+    const allowedFields: (keyof typeof donation)[] = [
       "title",
       "description",
       "quantity",
@@ -67,13 +70,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "pickup_address",
       "expiry_date",
       "images",
+      "status",
     ];
 
-    updateFields.forEach((field) => {
-      if (data[field] !== undefined) {
-        (donation[field] as any) = data[field]; // Type assertion to avoid TypeScript error
+    // Retain existing values for required fields if not provided in request
+    allowedFields.forEach((field) => {
+      if (data[field] === undefined || data[field] === null || data[field] === '') {
+        data[field] = donation[field]; // Preserve previous value
       }
     });
+
+    // Perform the update
+    Object.assign(donation, data);
+    console.log(donation);
 
     await donation.save();
     return NextResponse.json(donation);
