@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import FoodDonation from "@/models/FoodDonationModel";
-import VolunteerAssignment from "@/models/VolunteerAssignmentModel";
+import FoodDonation from "@/models/FoodDonation";
+import VolunteerAssignment from "@/models/VolunteerClaim";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { io } from "@/server"; // WebSocket for real-time updates

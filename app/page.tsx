@@ -1,100 +1,153 @@
 import Image from "next/image";
 import Link from "next/link";
+import Icon from "@/public/icon.svg";
+import FoodDonationImage from "@/public/donation.png";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col items-center row-start-2 gap-8 sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <>
+      <div className="container absolute left-0 right-0 mx-auto">
+        <header>
+          <div className="flex items-center justify-between w-full gap-5 px-5 pt-5">
+            <div className="flex items-center gap-10">
+              <div className="flex items-center gap-4">
+                <Link href={"/dashboard"}>
+                  <Image src={Icon} alt={"logo"} />
+                </Link>
+                <h1 className="text-4xl font-semibold transition-opacity duration-150 ease-linear cursor-default text-light-black hover:opacity-75">
+                  Foodscue
+                </h1>
+              </div>
+              <nav className="flex items-center">
+                <ul className="flex gap-10 pt-2">
+                  <Link href={"/"}>
+                    <li className="transition-opacity duration-150 ease-linear hover:opacity-65">
+                      Home
+                    </li>
+                  </Link>
+                  <Link href={"/dashboard"}>
+                    <li className="transition-opacity duration-150 ease-linear hover:opacity-65">
+                      Donations
+                    </li>
+                  </Link>
+                  <Link href={"/dashboard"}>
+                    <li className="transition-opacity duration-150 ease-linear hover:opacity-65">
+                      Shelters
+                    </li>
+                  </Link>
+                  <Link href={"/dashboard"}>
+                    <li className="transition-opacity duration-150 ease-linear hover:opacity-65">
+                      How it works
+                    </li>
+                  </Link>
+                </ul>
+              </nav>
+            </div>
+            <Link
+              href={"/signin"}
+              className="px-6 py-2 text-xl font-semibold transition-colors duration-100 ease-linear rounded-full outline-none ring-1 ring-light-black hover:ring-0 hover:bg-light-black bg-light-green text-light-black hover:text-white"
+            >
+              Sign In
+            </Link>
+          </div>
+        </header>
 
-        <div className="flex flex-col items-center gap-4 sm:flex-row">
-          <Link
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="signup"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            SignUp
-          </Link>
-          <Link
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="/signin"
-            rel="noopener noreferrer"
-          >
-            SignIn
-          </Link>
+        <Separator className="mt-5" />
+
+        <main>
+          <section className="flex">
+            <div className="relative pt-5 mt-5">
+              <Image
+                src={FoodDonationImage}
+                className="rounded-3xl"
+                alt="Welcome page"
+                width={950}
+              />
+              <h1 className="absolute bottom-4 right-2 text-white lg:text-5xl mix-blend-difference font-semibold max-w-[450px]">
+                Rescue Surplus Food, Fight Hunger!
+              </h1>
+            </div>
+            <div className="max-w-[550px] px-10">
+              <h1 className="mt-24 font-bold lg:text-5xl justify-self-center">
+                Join Us in Reducing Food Waste & Feeding Those in Need
+              </h1>
+              <p className="mt-5 text-xl italic font-medium indent-14">
+                "Foodscue connects donors, volunteers, and shelters to ensure no
+                meal goes to waste."
+              </p>
+              <div className="flex items-center gap-5">
+                <Link href={"/signin"} className="outline-none">
+                  <Button className="mt-5 font-semibold rounded-full ring-1 ring-light-black hover:ring-0 bg-light-green text-light-black hover:text-white">
+                    Get started
+                  </Button>
+                </Link>
+                <Link href={"/info"} className="outline-none">
+                  <Button
+                    className="mt-5 font-semibold text-light-black"
+                    variant={"link"}
+                  >
+                    Learn more
+                  </Button>
+                </Link>
+              </div>
+              <Separator className="my-5" />
+              <div>
+                <h1 className="mb-5 text-2xl font-semibold">Testimonials</h1>
+                <div className="grid grid-cols-3 gap-5">
+                  <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light ">
+                    <span className="text-2xl font-bold">10,000+</span>
+                    <h1 className="font-medium text-center">Meals Rescued</h1>
+                  </div>
+                  <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light ">
+                    <span className="text-2xl font-bold">500+</span>
+                    <h1 className="font-medium text-center">
+                      Volunteers Engaged
+                    </h1>
+                  </div>
+                  <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light ">
+                    <span className="text-2xl font-bold">200+</span>
+                    <h1 className="font-medium text-center">
+                      Shelters Supported
+                    </h1>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+      <footer>
+        <div className="fixed inset-x-0 bottom-0 w-full bg-light-black">
+          <div className="grid flex-col grid-cols-4 gap-1 px-5 py-2 my-2 justify-items-center">
+            <Link
+              href={"/about"}
+              className="text-sm font-medium text-white underline underline-offset-2"
+            >
+              About Us
+            </Link>
+            <Link
+              href={"/contact"}
+              className="text-sm font-medium text-white underline underline-offset-2"
+            >
+              Contact
+            </Link>
+            <Link
+              href={"/social-media"}
+              className="text-sm font-medium text-white underline underline-offset-2"
+            >
+              Social Media
+            </Link>
+            <Link
+              href={"/terms-and-conditions"}
+              className="text-sm font-medium text-white underline underline-offset-2"
+            >
+              Terms & conditions
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="flex flex-wrap items-center justify-center row-start-3 gap-6">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
       </footer>
-    </div>
+    </>
   );
 }

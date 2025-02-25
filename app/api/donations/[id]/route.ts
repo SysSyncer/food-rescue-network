@@ -1,11 +1,14 @@
 // path: app/api/donations/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import FoodDonation, {IFoodDonation} from "@/models/FoodDonationModel";
+import FoodDonation from "@/models/FoodDonation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   await connectMongo();
   const session = await getServerSession(authOptions);
 
@@ -20,7 +23,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const donation = await FoodDonation.findById(id);
 
     if (!donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
     }
 
     // Ensure the donor is the owner
@@ -31,11 +37,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(donation);
   } catch (error) {
     console.error("Error fetching donation:", error);
-    return NextResponse.json({ error: "Failed to fetch donation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch donation" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
   await connectMongo();
   const session = await getServerSession(authOptions);
 
@@ -51,9 +63,12 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
 
     // Find the existing donation
     const donation = await FoodDonation.findById(id);
-    console.log(donation)
+    console.log(donation);
     if (!donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
     }
 
     // Ensure the donor is the owner
@@ -75,7 +90,11 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
 
     // Retain existing values for required fields if not provided in request
     allowedFields.forEach((field) => {
-      if (data[field] === undefined || data[field] === null || data[field] === '') {
+      if (
+        data[field] === undefined ||
+        data[field] === null ||
+        data[field] === ""
+      ) {
         data[field] = donation[field]; // Preserve previous value
       }
     });
@@ -88,11 +107,17 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
     return NextResponse.json(donation);
   } catch (error) {
     console.error("Error updating donation:", error);
-    return NextResponse.json({ error: "Failed to update donation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update donation" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   await connectMongo();
   const session = await getServerSession(authOptions);
 
@@ -103,7 +128,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const donation = await FoodDonation.findById(params.id);
     if (!donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
     }
 
     // Check if the logged-in donor is the creator of the donation
@@ -112,15 +140,25 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const updatedData = await request.json();
-    const updatedDonation = await FoodDonation.findByIdAndUpdate(params.id, updatedData, { new: true });
+    const updatedDonation = await FoodDonation.findByIdAndUpdate(
+      params.id,
+      updatedData,
+      { new: true }
+    );
 
     return NextResponse.json(updatedDonation);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update donation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update donation" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   await connectMongo();
   const session = await getServerSession(authOptions);
 
@@ -134,7 +172,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Find the donation
     const donation = await FoodDonation.findById(id);
     if (!donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
     }
 
     // Ensure the donor is the owner
@@ -148,6 +189,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ message: "Donation deleted successfully" });
   } catch (error) {
     console.error("Error deleting donation:", error);
-    return NextResponse.json({ error: "Failed to delete donation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete donation" },
+      { status: 500 }
+    );
   }
 }

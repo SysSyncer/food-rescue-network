@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectMongo from "@/lib/connectMongo";
 import { Types } from "mongoose"; // Import Types
-import FoodDonation from "@/models/FoodDonationModel";
-import VolunteerAssignment from "@/models/VolunteerAssignmentModel";
+import FoodDonation from "@/models/FoodDonation";
+import VolunteerAssignment from "@/models/VolunteerClaim";
 import { io } from "@/server"; // Import the WebSocket server
 
 export async function PUT(

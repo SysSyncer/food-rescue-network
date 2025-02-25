@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import FoodDonation from "@/models/FoodDonationModel";
+import FoodDonation from "@/models/FoodDonation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
       !data.pickup_address ||
       !data.expiry_date
     ) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     // Collect the image URLs (ensure it's an array, even if no images are uploaded)
@@ -39,10 +42,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(donation);
   } catch (error) {
     console.error("Error creating donation:", error); // For debugging
-    return NextResponse.json({ error: "Failed to create donation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create donation" },
+      { status: 500 }
+    );
   }
 }
-
 
 export async function GET(request: NextRequest) {
   await connectMongo();
@@ -59,6 +64,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(donations);
   } catch (error) {
     console.error("Error fetching donations:", error);
-    return NextResponse.json({ error: "Failed to fetch donations" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch donations" },
+      { status: 500 }
+    );
   }
 }

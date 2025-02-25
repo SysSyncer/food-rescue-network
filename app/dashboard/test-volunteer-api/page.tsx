@@ -149,7 +149,7 @@ export default function TestVolunteerAPI() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader>
-          <CardTitle className="text-center text-xl">
+          <CardTitle className="text-xl text-center">
             Test Volunteer API
           </CardTitle>
         </CardHeader>
@@ -163,7 +163,7 @@ export default function TestVolunteerAPI() {
               <li key={donation._id}>
                 <Button
                   variant="outline"
-                  className="w-full flex justify-between p-2"
+                  className="flex justify-between w-full p-2"
                   onClick={() => setDonationId(donation._id)}
                 >
                   {donation.title}
@@ -205,7 +205,7 @@ export default function TestVolunteerAPI() {
           </Button>
           <ul className="space-y-2">
             {claimedDonations.map((donation) => (
-              <li key={donation._id} className="border p-4 rounded-md">
+              <li key={donation._id} className="p-4 border rounded-md">
                 <h3 className="text-lg font-semibold">
                   {donation.donation_id.title}
                 </h3>
@@ -218,7 +218,7 @@ export default function TestVolunteerAPI() {
                 </p>
 
                 {/* Status Update Buttons with Confirmation */}
-                <div className="flex space-x-2 mt-2">
+                <div className="flex mt-2 space-x-2">
                   {donation.donation_id.status === "claimed" && (
                     <StatusUpdateDialog
                       donationId={donation.donation_id._id}

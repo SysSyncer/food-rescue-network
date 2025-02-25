@@ -1,40 +1,42 @@
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import User from "@/models/UserModel";
+import User from "@/models/User";
+import argon2 from "argon2";
 
-// Signup handler
 export async function POST(req: Request) {
   try {
+    const { name, email, password, role, profileImage } = await req.json();
+
     await connectMongo();
 
-    const { name, email, password, role, phone, location } = await req.json();
-
-    // Check for missing fields
-    if (!name || !email || !password || !role) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Check if the user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, role });
     if (existingUser) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 });
+      return NextResponse.json(
+        { error: "User already exists" },
+        { status: 400 }
+      );
     }
 
-    // Create the user
+    const hashedPassword = await argon2.hash(password);
+
     const newUser = new User({
       name,
       email,
-      password,
+      password: hashedPassword,
       role,
-      phone,
-      location,
+      profileImage,
     });
 
     await newUser.save();
 
-    return NextResponse.json({ message: "User created successfully" }, { status: 201 });
+    return NextResponse.json(
+      { message: "User created successfully" },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error("Error creating user:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

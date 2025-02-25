@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import FoodDonation from "@/models/FoodDonationModel";
+import FoodDonation from "@/models/FoodDonation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(availableDonations);
   } catch (error) {
     console.error("Error fetching available donations:", error);
-    return NextResponse.json({ error: "Failed to fetch donations" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch donations" },
+      { status: 500 }
+    );
   }
 }

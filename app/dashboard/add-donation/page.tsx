@@ -6,7 +6,8 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
+// import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function AddDonationForm() {
   const router = useRouter();
@@ -67,16 +68,15 @@ export default function AddDonationForm() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Success",
+        toast.success("Success", {
           description: "Donation created successfully!",
         });
         router.push("/dashboard");
       } else {
-        toast({ title: "Error", description: "Failed to create donation" });
+        toast("Error", { description: "Failed to create donation" });
       }
     } catch (error) {
-      toast({ title: "Error", description: "An unexpected error occurred" });
+      toast("Error", { description: "An unexpected error occurred" });
     }
   };
 
