@@ -14,7 +14,7 @@ export default function VolunteerNavbar() {
   const { data: session } = useSession();
 
   return (
-    <nav className="flex items-center justify-between p-4 border-b shadow-sm bg-white">
+    <nav className="flex items-center justify-between p-4 bg-white border-b shadow-sm">
       {/* Left Side: Welcome Message */}
       <div className="text-lg font-semibold">
         {session?.user?.name ? `Welcome, ${session.user.name}` : "Welcome"}

@@ -10,24 +10,26 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        role: { label: "Role", type: "text" },
       },
       async authorize(credentials) {
         await connectMongo();
 
-        if (!credentials?.email || !credentials.password || !credentials.role) {
-          throw new Error("Missing email, password, or role");
+        if (!credentials?.email || !credentials.password) {
+          throw new Error("Missing email or password");
         }
 
-        const user = await User.findOne({
-          email: credentials.email,
-          role: credentials.role,
-        });
+        const user = await User.findOne({ email: credentials.email });
         if (!user) {
-          throw new Error("No user found with this email and role");
+          throw new Error("No user found with this email");
         }
 
+        console.log("Entered password for verification:", credentials.password);
+        console.log("Stored hashed password:", user.password);
+
+        // ✅ Use the model's validatePassword() method
         const isValid = await user.validatePassword(credentials.password);
+        console.log("Password verification result:", isValid);
+
         if (!isValid) {
           throw new Error("Invalid credentials");
         }
@@ -37,7 +39,8 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
-          profileImage: user.profileImage || "",
+          phone: user.phone,
+          location: user.location,
         };
       },
     }),
@@ -49,8 +52,11 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.name = user.name;
-        token.profileImage = user.profileImage;
+        token.email = user.email;
         token.role = user.role;
+        token.phone = user.phone;
+        token.location = user.location;
+        token.profileImage = user.profileImage; // Include profile image
       }
       return token;
     },
@@ -60,7 +66,9 @@ export const authOptions: NextAuthOptions = {
         name: token.name as string,
         email: token.email as string,
         role: token.role as "donor" | "volunteer" | "shelter",
-        profileImage: token.profileImage as string,
+        phone: token.phone as string, // Add phone
+        location: token.location as string, // Add location
+        profileImage: token.profileImage as string, // Add profile image
       };
       return session;
     },

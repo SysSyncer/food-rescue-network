@@ -17,7 +17,7 @@ export default function VolunteerTabs() {
       className="w-full p-4"
     >
       {/* Tabs Navigation */}
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+      <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4">
         <TabsTrigger value="available-donors">Available Donors</TabsTrigger>
         <TabsTrigger value="available-shelters">Available Shelters</TabsTrigger>
         <TabsTrigger value="claimed-donors">Claimed Donors</TabsTrigger>

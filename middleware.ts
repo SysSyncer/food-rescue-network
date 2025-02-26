@@ -2,30 +2,55 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXT_PUBLIC_JWT_SECRET });
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  // Define protected routes and role-based access control
-  const roleBasedRoutes: { [key: string]: string[] } = {
-    donor: ["/dashboard/donations", "/upload", "dashboard/add-donation"],
-    shelter: ["/dashboard/requests"],
-    volunteer: ["/dashboard/volunteer"],
-  };
+  console.log("Middleware - Token:", token); // Debugging
 
-  // Define all protected routes
-  const protectedRoutes = ["/home", "/dashboard", "/profile", "/upload", "/add-donation", "/dashboard/:path*"];
+  const path = request.nextUrl.pathname;
 
-  // Redirect unauthenticated users for protected routes
-  if (protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))) {
-    if (!token) {
+  // ✅ Allow unauthenticated users to access only these routes
+  const publicRoutes = ["/", "/signin", "/signout"];
+  console.log("This is a token : ", token);
+
+  if (!token) {
+    if (!publicRoutes.includes(path)) {
+      console.log(`Middleware - No token found, redirecting to /signin`);
       return NextResponse.redirect(new URL("/signin", request.url));
     }
+    return NextResponse.next();
   }
 
-  // Role-based restriction
-  for (const [role, routes] of Object.entries(roleBasedRoutes)) {
-    if (routes.some((route) => request.nextUrl.pathname.startsWith(route))) {
-      if (token?.role !== role) {
-        return NextResponse.redirect(new URL("/unauthorized", request.url)); // Redirect unauthorized users
+  if (!token) {
+    // If no token is found, redirect to sign-in
+    console.log("Middleware - No token found, redirecting to /signin");
+    return NextResponse.redirect(new URL("/signin", request.url));
+  }
+
+  const userRole = token.role as string;
+  console.log("Middleware - User Role:", userRole); // Debugging
+
+  // Define role-based access paths
+  const rolePaths: Record<string, string> = {
+    volunteer: "/dashboard/volunteer",
+    shelter: "/dashboard/shelter",
+    donor: "/dashboard/donor",
+  };
+
+  // ✅ If the user is accessing the correct dashboard, allow access immediately
+  if (rolePaths[userRole] && path.startsWith(rolePaths[userRole])) {
+    console.log(`Middleware - Authorized access: ${userRole} to ${path}`);
+    return NextResponse.next();
+  }
+
+  // 🚫 Otherwise, check if the user is trying to access another role's dashboard
+  for (const [allowedRole, basePath] of Object.entries(rolePaths)) {
+    if (path.startsWith("/dashboard") && !path.startsWith(basePath)) {
+      if (userRole !== allowedRole) {
+        console.log(`Middleware - Unauthorized access: ${userRole} to ${path}`);
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
       }
     }
   }
@@ -33,6 +58,7 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+// Apply middleware to dashboard routes
 export const config = {
-  matcher: ["/home", "/dashboard/:path*", "/profile", "/upload"],
+  matcher: ["/dashboard/:path*", "/unauthorized"],
 };

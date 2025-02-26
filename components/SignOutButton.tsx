@@ -11,15 +11,12 @@ export default function SignOutButton() {
     toast.success("You have signed out!");
 
     await signOut({ redirect: false }); // Prevents auto redirect
-
-    setTimeout(() => {
-      router.push("/signin"); // Manually redirect
-    }, 1500);
+    router.push("/signin"); // Manually redirect
   };
 
   return (
     <Button variant="outline" onClick={handleSignOut}>
-      Sign Out
+      SignOut
     </Button>
   );
 }

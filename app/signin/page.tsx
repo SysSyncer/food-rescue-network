@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,77 +12,97 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// import { useToast } from "@/hooks/use-toast";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { data: session, status } = useSession();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role) {
+      redirectToDashboard(session.user.role);
+    }
+  }, [status, session]);
+
+  const redirectToDashboard = (role: string) => {
+    if (role === "volunteer") {
+      router.push("/dashboard/volunteer");
+    } else if (role === "shelter") {
+      router.push("/dashboard/shelter");
+    } else if (role === "donor") {
+      router.push("/dashboard/donor");
+    } else {
+      router.push("/"); // Default fallback
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = await signIn("credentials", {
-      email,
-      password,
+    const res = await signIn("credentials", {
       redirect: false,
+      email: formData.email,
+      password: formData.password,
     });
 
-    if (result?.error) {
-      toast.error("Sign-In Failed", {
-        description: result.error,
-      });
+    if (res?.error) {
+      toast.error(res.error);
     } else {
-      toast.success("Sign-In Successful", {
-        description: "Welcome back!",
-      });
-      router.push("/dashboard");
+      toast.success("Sign-in successful!");
     }
   };
 
   return (
-    <>
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-[350px]">
-          <CardHeader>
-            <CardTitle className="text-3xl font-semibold">Sign In</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Button type="submit" className="w-full font-semibold">
-                Sign In
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="justify-center">
-            <p className="text-center">
-              Don't have an account?{" "}
-              <Link
-                href="/signup"
-                className="text-green-700 underline focus:text-green-500"
-              >
-                Sign up
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
-    </>
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-3xl font-semibold">Sign In</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+            <Input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            <Button type="submit" className="w-full font-semibold">
+              Sign In
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <p className="text-center">
+            Don't have an account?{" "}
+            <Link
+              href="/signup"
+              className="focus:text-[#06D001] underline text-[#059212]"
+            >
+              SignUp
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

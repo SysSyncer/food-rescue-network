@@ -7,6 +7,8 @@ declare module "next-auth" {
       name: string;
       email: string;
       role: "donor" | "volunteer" | "shelter";
+      phone?: string;
+      location?: string;
       profileImage?: string;
     };
   }
@@ -16,6 +18,8 @@ declare module "next-auth" {
     name: string;
     email: string;
     role: "donor" | "volunteer" | "shelter";
+    phone?: string;
+    location?: string;
     profileImage?: string;
   }
 }
