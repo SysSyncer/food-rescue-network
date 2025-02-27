@@ -1,7 +1,9 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectMongo from "@/lib/connectMongo";
-import User from "@/models/User";
+import UserCredentials from "@/models/UserCredentials";
+import UserDetails from "@/models/UserDetails";
+import jwt from "jsonwebtoken"; // ✅ Import JWT
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,29 +20,45 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Missing email or password");
         }
 
-        const user = await User.findOne({ email: credentials.email });
+        // Find user credentials
+        const user = await UserCredentials.findOne({
+          email: credentials.email,
+        });
+
         if (!user) {
           throw new Error("No user found with this email");
         }
 
-        console.log("Entered password for verification:", credentials.password);
-        console.log("Stored hashed password:", user.password);
-
-        // ✅ Use the model's validatePassword() method
+        // Validate password
         const isValid = await user.validatePassword(credentials.password);
-        console.log("Password verification result:", isValid);
-
         if (!isValid) {
           throw new Error("Invalid credentials");
         }
 
+        // Ensure UserDetails document exists
+        const existingDetails = await UserDetails.findOne({ userId: user._id });
+        if (!existingDetails) {
+          await UserDetails.create({
+            userId: user._id,
+            name: "",
+            phone: "",
+            location: "",
+            profileImage: "",
+          });
+        }
+
+        // ✅ Generate accessToken
+        const accessToken = jwt.sign(
+          { userId: user._id.toString(), email: user.email, role: user.role },
+          process.env.NEXT_PUBLIC_JWT_SECRET!,
+          { expiresIn: "1h" }
+        );
+
         return {
           id: user._id.toString(),
-          name: user.name,
           email: user.email,
           role: user.role,
-          phone: user.phone,
-          location: user.location,
+          accessToken,
         };
       },
     }),
@@ -51,24 +69,19 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.name = user.name;
+        token.id = user.id;
         token.email = user.email;
         token.role = user.role;
-        token.phone = user.phone;
-        token.location = user.location;
-        token.profileImage = user.profileImage; // Include profile image
+        token.accessToken = user.accessToken; // ✅ Store accessToken in JWT
       }
       return token;
     },
     async session({ session, token }) {
       session.user = {
-        id: token.sub as string,
-        name: token.name as string,
+        id: token.id as string,
         email: token.email as string,
         role: token.role as "donor" | "volunteer" | "shelter",
-        phone: token.phone as string, // Add phone
-        location: token.location as string, // Add location
-        profileImage: token.profileImage as string, // Add profile image
+        accessToken: token.accessToken as string, // ✅ Attach accessToken to session
       };
       return session;
     },

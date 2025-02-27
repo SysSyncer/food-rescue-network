@@ -28,7 +28,10 @@ export default function VolunteerNavbar() {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar>
-              <AvatarImage src={session?.user?.image || ""} alt="Profile" />
+              <AvatarImage
+                src={session?.user?.profileImage || ""}
+                alt="Profile"
+              />
               <AvatarFallback>
                 {session?.user?.name?.charAt(0) || "V"}
               </AvatarFallback>

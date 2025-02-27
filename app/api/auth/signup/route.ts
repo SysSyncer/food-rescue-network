@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
-import User from "@/models/User";
-import argon2 from "argon2"; // ✅ Ensure this is `argon2`, not `* as argon2`
+import User from "@/models/UserCredentials";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log("Received request body:", body);
 
-    const { name, email, password, role } = body;
+    const { email, password, role } = body;
 
-    if (!name || !email || !password || !role) {
+    if (!email || !password || !role) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
@@ -27,11 +26,8 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Plain password before hashing:", password);
-    const hashedPassword = await argon2.hash(password);
-    console.log("Hashed password:", hashedPassword);
-
-    const newUser = new User({ name, email, password: hashedPassword, role });
+    // ❌ Removed `name` field
+    const newUser = new User({ email, password, role });
 
     await newUser.save();
     console.log("User saved successfully");

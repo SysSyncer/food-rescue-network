@@ -24,7 +24,6 @@ import {
 export default function SignUpPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -34,7 +33,6 @@ export default function SignUpPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    console.log({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleRoleChange = (value: string) => {
@@ -55,7 +53,6 @@ export default function SignUpPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role,
@@ -82,14 +79,6 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="text"
-              name="name"
-              placeholder="Name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
             <Input
               type="email"
               name="email"
@@ -140,7 +129,7 @@ export default function SignUpPage() {
               href="/signin"
               className="focus:text-[#06D001] underline text-[#059212]"
             >
-              SignIn
+              Sign In
             </Link>
           </p>
         </CardFooter>
