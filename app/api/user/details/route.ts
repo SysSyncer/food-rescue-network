@@ -4,6 +4,7 @@ import connectMongo from "@/lib/connectMongo";
 import UserDetails, { IUserDetails } from "@/models/UserDetails";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import cloudinary from "@/lib/cloudinary";
+import sharp from "sharp";
 
 export async function GET() {
   try {
@@ -75,6 +76,62 @@ export async function POST(req: Request) {
   }
 }
 
+// export async function PATCH(req: Request) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session?.user?.id) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     await connectMongo();
+//     const formData = await req.formData();
+//     const file = formData.get("file") as Blob | null;
+
+//     if (!file) {
+//       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+//     }
+
+//     // Convert Blob to Buffer
+//     const arrayBuffer = await file.arrayBuffer();
+//     const buffer = Buffer.from(arrayBuffer);
+
+//     // Upload to Cloudinary
+//     const uploadResult = await new Promise((resolve, reject) => {
+//       cloudinary.uploader
+//         .upload_stream({ folder: "profile_images" }, (error, result) => {
+//           if (error) reject(error);
+//           else resolve(result);
+//         })
+//         .end(buffer);
+//     });
+
+//     // Ensure upload result has a URL
+//     if (
+//       !uploadResult ||
+//       typeof uploadResult !== "object" ||
+//       !("secure_url" in uploadResult)
+//     ) {
+//       throw new Error("Failed to upload image to Cloudinary");
+//     }
+
+//     const profileImage = uploadResult.secure_url;
+
+//     await UserDetails.findOneAndUpdate(
+//       { userId: session.user.id },
+//       { $set: { profileImage } },
+//       { new: true, upsert: true }
+//     );
+
+//     return NextResponse.json({ profileImage }, { status: 200 });
+//   } catch (error) {
+//     console.error("Error uploading profile image:", error);
+//     return NextResponse.json(
+//       { error: "Internal Server Error" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function PATCH(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -92,8 +149,15 @@ export async function PATCH(req: Request) {
 
     // Convert Blob to Buffer
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let buffer = Buffer.from(arrayBuffer);
 
+    // Compress & resize image using sharp
+    buffer = await sharp(buffer)
+      .resize(500, 500, { fit: "cover" }) // Resize to 500x500 (adjust as needed)
+      .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
+      .toBuffer();
+
+    console.log("image compressed");
     // Upload to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
@@ -104,7 +168,6 @@ export async function PATCH(req: Request) {
         .end(buffer);
     });
 
-    // Ensure upload result has a URL
     if (
       !uploadResult ||
       typeof uploadResult !== "object" ||

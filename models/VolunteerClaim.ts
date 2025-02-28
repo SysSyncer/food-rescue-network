@@ -1,41 +1,31 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
-export interface IVolunteerClaim extends Document {
-  volunteer_id: Types.ObjectId;
-  food_donation_id: Types.ObjectId;
-  shelter_request_id: Types.ObjectId;
-  donor_status: "claimed" | "in_transit" | "delivered" | "rejected_by_donor";
-  shelter_status: "promised" | "fulfilled" | "rejected_by_shelter";
+export interface IFoodDonation extends Document {
+  donor_id: Types.ObjectId;
+  food_type: string;
+  quantity: number;
+  image_url: string;
+  volunteer_pool_size: number;
+  claimed_volunteers: Types.ObjectId[];
+  location: string; // Added pickup address
+  status: "available" | "closed";
   createdAt: Date;
 }
 
-const VolunteerClaimSchema = new Schema<IVolunteerClaim>({
-  volunteer_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  food_donation_id: {
-    type: Schema.Types.ObjectId,
-    ref: "FoodDonation",
-    required: true,
-  },
-  shelter_request_id: {
-    type: Schema.Types.ObjectId,
-    ref: "ShelterRequest",
-    required: true,
-  },
-  donor_status: {
-    type: String,
-    enum: ["claimed", "in_transit", "delivered", "rejected_by_donor"],
-    default: "claimed",
-  },
-  shelter_status: {
-    type: String,
-    enum: ["promised", "fulfilled", "rejected_by_shelter"],
-    default: "promised",
-  },
+const FoodDonationSchema = new Schema<IFoodDonation>({
+  donor_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  food_type: { type: String, required: true },
+  quantity: { type: Number, required: true },
+  image_url: { type: String, required: true },
+  volunteer_pool_size: { type: Number, required: true },
+  location: { type: String, required: true }, // Added location field
+  claimed_volunteers: [{ type: Schema.Types.ObjectId, ref: "VolunteerClaim" }],
+  status: { type: String, enum: ["available", "closed"], default: "available" },
   createdAt: { type: Date, default: Date.now },
 });
 
-const VolunteerClaim: Model<IVolunteerClaim> =
-  mongoose.models.VolunteerClaim ||
-  mongoose.model<IVolunteerClaim>("VolunteerClaim", VolunteerClaimSchema);
+const FoodDonation: Model<IFoodDonation> =
+  mongoose.models.FoodDonation ||
+  mongoose.model<IFoodDonation>("FoodDonation", FoodDonationSchema);
 
-export default VolunteerClaim;
+export default FoodDonation;

@@ -7,13 +7,10 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  console.log("Middleware - Token:", token); // Debugging
-
   const path = request.nextUrl.pathname;
 
   // ✅ Allow unauthenticated users to access only these routes
   const publicRoutes = ["/", "/signin", "/signout"];
-  console.log("This is a token : ", token);
 
   if (!token) {
     if (!publicRoutes.includes(path)) {

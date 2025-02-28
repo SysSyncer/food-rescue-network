@@ -1,29 +1,59 @@
-// server.ts
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 
-const app = express();
-const server = http.createServer(app);
+const PORT = 4200;
 
-const io = new Server(server, {
-  cors: {
-    origin: "*", // Adjust as needed for security
-    methods: ["GET", "POST"],
-  },
-});
+// Use a global variable to prevent multiple instances
+declare global {
+  var _io: Server | undefined;
+  var _connectedUsers: Map<string, string> | undefined;
+}
 
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+if (!global._io) {
+  console.log("Starting WebSocket server...");
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+  const app = express();
+  const server = http.createServer(app);
+
+  const io = new Server(server, {
+    cors: {
+      origin: "*", // Adjust for security
+      methods: ["GET", "POST"],
+    },
   });
-});
 
-server.listen(4000, () => {
-  console.log("WebSocket server running on port 4000");
-});
+  const connectedUsers = new Map<string, string>(); // Stores userId -> socketId mapping
 
-// Export for usage in Next.js API
-export { io };
+  io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    socket.on("register", (userId) => {
+      connectedUsers.set(userId, socket.id);
+      console.log(`User ${userId} registered with socket ID ${socket.id}`);
+    });
+
+    // Handle disconnections
+    socket.on("disconnect", () => {
+      connectedUsers.forEach((id, key) => {
+        if (id === socket.id) connectedUsers.delete(key);
+      });
+      console.log("User disconnected:", socket.id);
+    });
+  });
+
+  // Start server only once
+  server.listen(PORT, () => {
+    console.log(`WebSocket server running on port ${PORT}`);
+  });
+
+  // Store in global variables to prevent duplicate instances
+  global._io = io;
+  global._connectedUsers = connectedUsers;
+} else {
+  console.log("WebSocket server already running. Skipping initialization.");
+}
+
+// Export the global instance
+export const io = global._io!;
+export const connectedUsers = global._connectedUsers!;

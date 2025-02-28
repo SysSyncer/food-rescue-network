@@ -107,7 +107,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-lg p-6 mx-auto bg-white rounded-md shadow-md">
+    <div className="max-w-lg p-6 mx-auto bg-white rounded-md">
       <h2 className="mb-4 text-2xl font-semibold text-center">Profile</h2>
 
       {/* Back Button */}

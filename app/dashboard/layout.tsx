@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: IChildren) {
   return (
     <div className="flex justify-center min-h-screen">
       <div className="container max-w-[90%]">
-        <nav className="flex items-center justify-between py-2 mt-4 bg-white rounded-md">
+        <nav className="flex items-center justify-between py-2 mt-4 bg-white rounded-md mb-5">
           {/* Left Side: Welcome Message */}
           <div className="font-semibold sm:max-w-[180px] md:max-w-[240px] md:text-2xl text-xl">
             {`${getGreetings()}, ${name}`}
@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: IChildren) {
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer">
                   <AvatarImage
-                    src={profileImage || "/default-avatar.png"}
+                    src={profileImage || "/defaultProfile.png"}
                     alt="Profile"
                   />
                   <AvatarFallback>
