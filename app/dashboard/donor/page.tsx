@@ -20,6 +20,7 @@ import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function DonorDashboard() {
   type Post = {
@@ -30,6 +31,7 @@ export default function DonorDashboard() {
     status: string;
     createdAt: string;
     volunteer_pool_size: number;
+    claimed_volunteers: string[];
     description?: string; // Optional field for donation description
   };
 
@@ -77,22 +79,17 @@ export default function DonorDashboard() {
       setPosts((prev) => [newDonation, ...prev]);
     });
 
-    socket.on("donation_updated", (updatedDonation: Post) => {
-      setPosts((prev) =>
-        prev.map((post) =>
-          post._id === updatedDonation._id ? updatedDonation : post
-        )
-      );
+    // socket.on("donation_updated", (updatedDonation: Post) => {
+    //   setPosts((prev) =>
+    //     prev.map((post) =>
+    //       post._id === updatedDonation._id ? updatedDonation : post
+    //     )
+    //   );
+    // });
 
-      // Update selected post if it's the one that was changed
-      if (selectedPost?._id === updatedDonation._id) {
-        setSelectedPost(updatedDonation);
-      }
-    });
-
-    socket.on("donation_deleted", (deletedId: string) => {
-      setPosts((prev) => prev.filter((post) => post._id !== deletedId));
-      if (selectedPost?._id === deletedId) setSelectedPost(null);
+    socket.on("donation_removed", ({ donationId }) => {
+      console.log("Donation removed:", donationId);
+      setPosts((prev) => prev.filter((post) => post._id !== donationId));
     });
 
     return () => {
@@ -106,20 +103,36 @@ export default function DonorDashboard() {
     }
   }, [emblaApi, selectedPost]);
 
+  async function handleDelete(donationId: string) {
+    try {
+      const res = await fetch(`/api/donations?donationId=${donationId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete donation");
+
+      // Remove the deleted donation from UI
+      setPosts((prevPosts) =>
+        prevPosts.filter((post) => post._id !== donationId)
+      );
+
+      toast.success("Donation deleted successfully");
+      setSelectedPost(null);
+    } catch (error) {
+      console.error("Error deleting donation:", error);
+    }
+  }
+
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
   };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case "completed":
+      case "available":
         return "bg-green-100 text-green-800";
-      case "pending":
+      case "closed":
         return "bg-yellow-100 text-yellow-800";
-      case "in progress":
-        return "bg-blue-100 text-blue-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -137,8 +150,8 @@ export default function DonorDashboard() {
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 p-2 md:p-4 h-[85vh] bg-gray-50 rounded-lg border border-gray-200">
       {/* Mobile header */}
-      <div className="block lg:hidden mb-2">
-        <div className="flex justify-between items-center px-2 pt-1">
+      <div className="block mb-2 lg:hidden">
+        <div className="flex items-center justify-between px-2 pt-1">
           <h2 className="text-xl font-semibold text-gray-800">
             {selectedPost ? "Donation Details" : "Your Donations"}
           </h2>
@@ -154,7 +167,7 @@ export default function DonorDashboard() {
           ) : (
             <Button
               size="sm"
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+              className="bg-light-black"
               onClick={() => router.push("/dashboard/donor/create-donation")}
             >
               <Plus size={16} /> Add
@@ -169,12 +182,9 @@ export default function DonorDashboard() {
           selectedPost ? "hidden" : "block"
         } lg:block h-full overflow-y-auto bg-white rounded-lg shadow-sm`}
       >
-        <div className="hidden lg:flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Your Donations
-          </h2>
+        <div className="items-center justify-between hidden p-4 border-b lg:flex">
           <Button
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black"
             onClick={() => router.push("/dashboard/donor/create-donation")}
           >
             <Plus size={16} /> Add Donation
@@ -185,12 +195,12 @@ export default function DonorDashboard() {
           // Loading skeletons
           <div className="p-3 space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-3 p-2">
+              <div key={i} className="flex p-2 gap-3">
                 <Skeleton className="w-32 h-24 rounded-md" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="w-24 h-5" />
+                  <Skeleton className="w-full h-4" />
+                  <Skeleton className="w-3/4 h-4" />
                 </div>
               </div>
             ))}
@@ -198,11 +208,11 @@ export default function DonorDashboard() {
         ) : posts.length === 0 ? (
           // Empty state
           <div className="flex flex-col items-center justify-center h-64 p-4 text-center">
-            <p className="text-gray-500 mb-4">
+            <p className="mb-4 text-gray-500">
               You haven't created any donations yet.
             </p>
             <Button
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black"
               onClick={() => router.push("/dashboard/donor/create-donation")}
             >
               <Plus size={16} /> Create Your First Donation
@@ -219,8 +229,8 @@ export default function DonorDashboard() {
                   }`}
                   onClick={() => handlePostClick(post)}
                 >
-                  <CardContent className="flex p-3 w-full">
-                    <div className="relative min-w-32 h-24 rounded-md overflow-hidden">
+                  <CardContent className="flex w-full p-3">
+                    <div className="relative h-24 overflow-hidden min-w-32 rounded-md">
                       {post.image_url && post.image_url.length > 0 ? (
                         <Image
                           src={post.image_url[0]}
@@ -229,22 +239,22 @@ export default function DonorDashboard() {
                           alt={`${post.food_type}`}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400 text-sm">
+                        <div className="flex items-center justify-center w-full h-full bg-gray-200">
+                          <span className="text-sm text-gray-400">
                             No image
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col justify-between ml-3 w-full">
-                      <div className="flex justify-between items-start">
+                    <div className="flex flex-col justify-between w-full ml-3">
+                      <div className="flex items-start justify-between">
                         <Badge
                           className={`px-2 py-1 ${getStatusColor(post.status)}`}
                           variant="outline"
                         >
                           {post.status}
                         </Badge>
-                        <span className="text-xs text-gray-500 flex items-center">
+                        <span className="flex items-center text-xs text-gray-500">
                           <Calendar size={12} className="mr-1" />
                           {formatDate(post.createdAt)}
                         </span>
@@ -253,12 +263,12 @@ export default function DonorDashboard() {
                         <p className="font-medium text-gray-800">
                           {post.food_type}
                         </p>
-                        <p className="text-xs text-gray-500 flex items-center mt-1">
+                        <p className="flex items-center mt-1 text-xs text-gray-500">
                           <Calendar size={12} className="mr-1" />
                           Expires: {formatDate(post.expiry_date)}
                         </p>
                       </div>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
+                      <div className="flex items-center mt-1 text-xs text-gray-500">
                         <Users size={12} className="mr-1" />
                         {post.volunteer_pool_size} volunteer
                         {post.volunteer_pool_size !== 1 ? "s" : ""}
@@ -275,15 +285,12 @@ export default function DonorDashboard() {
 
       {/* Detail Panel */}
       {selectedPost ? (
-        <div className="col-span-2 bg-white rounded-lg shadow-sm p-4">
+        <div className="p-4 bg-white rounded-lg col-span-2 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Donation Details
-            </h2>
             <Button
               variant="outline"
               size="sm"
-              className="hidden lg:flex items-center gap-1"
+              className="items-center hidden lg:flex gap-1"
               onClick={() => setSelectedPost(null)}
             >
               <ArrowLeft size={16} /> Back to List
@@ -294,7 +301,7 @@ export default function DonorDashboard() {
           {selectedPost.image_url && selectedPost.image_url.length > 0 ? (
             <div className="mb-6">
               <div
-                className="relative w-full h-64 md:h-80 overflow-hidden rounded-lg"
+                className="relative w-full h-64 overflow-hidden rounded-lg md:h-80"
                 ref={emblaRef}
               >
                 <div className="flex h-full">
@@ -317,11 +324,11 @@ export default function DonorDashboard() {
               </div>
 
               {selectedPost.image_url.length > 1 && (
-                <div className="flex justify-center gap-2 mt-3">
+                <div className="flex justify-center mt-3 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-full w-10 h-10 p-0"
+                    className="w-10 h-10 p-0 rounded-full"
                     onClick={() => emblaApi?.scrollPrev()}
                   >
                     <ChevronLeft size={18} />
@@ -329,7 +336,7 @@ export default function DonorDashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-full w-10 h-10 p-0"
+                    className="w-10 h-10 p-0 rounded-full"
                     onClick={() => emblaApi?.scrollNext()}
                   >
                     <ChevronRight size={18} />
@@ -338,14 +345,14 @@ export default function DonorDashboard() {
               )}
             </div>
           ) : (
-            <div className="w-full h-64 bg-gray-100 flex items-center justify-center rounded-lg mb-6">
+            <div className="flex items-center justify-center w-full h-64 mb-6 bg-gray-100 rounded-lg">
               <span className="text-gray-400">No images available</span>
             </div>
           )}
 
           {/* Donation Details */}
-          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-            <div className="flex justify-between items-start">
+          <div className="p-4 rounded-lg bg-gray-50 space-y-3">
+            <div className="flex items-start justify-between">
               <h3 className="text-lg font-medium text-gray-800">
                 {selectedPost.food_type}
               </h3>
@@ -361,7 +368,7 @@ export default function DonorDashboard() {
               <p className="text-gray-600">{selectedPost.description}</p>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="flex items-center text-sm text-gray-600">
                 <Calendar size={16} className="mr-2 text-gray-400" />
                 <div>
@@ -391,6 +398,7 @@ export default function DonorDashboard() {
                 <div>
                   <p className="font-medium">Volunteer Pool</p>
                   <p>
+                    {selectedPost.claimed_volunteers.length} /{" "}
                     {selectedPost.volunteer_pool_size} volunteer
                     {selectedPost.volunteer_pool_size !== 1 ? "s" : ""}
                   </p>
@@ -400,34 +408,30 @@ export default function DonorDashboard() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex gap-3 justify-end">
+          <div className="flex justify-end mt-6 gap-3">
             <Button
               variant="outline"
-              onClick={() =>
-                router.push(
-                  `/dashboard/donor/edit-donation/${selectedPost._id}`
-                )
-              }
+              onClick={() => handleDelete(selectedPost._id)}
             >
-              Edit Donation
+              Delete Donation
             </Button>
             {selectedPost.status !== "completed" && (
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black">
                 Mark as Completed
               </Button>
             )}
           </div>
         </div>
       ) : (
-        <div className="hidden lg:block col-span-2 bg-white rounded-lg shadow-sm p-8">
+        <div className="hidden p-8 bg-white rounded-lg lg:block col-span-2 shadow-sm">
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="mb-4 text-gray-400">
               <ChevronLeft size={64} />
             </div>
-            <h3 className="text-xl font-medium text-gray-700 mb-2">
+            <h3 className="mb-2 text-xl font-medium text-gray-700">
               Select a donation
             </h3>
-            <p className="text-gray-500 max-w-md">
+            <p className="max-w-md text-gray-500">
               Choose a donation from the list to view its details, or create a
               new donation.
             </p>

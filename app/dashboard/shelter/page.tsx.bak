@@ -1,0 +1,575 @@
+// "use client";
+
+// import { Button } from "@/components/ui/button";
+// import { Menu } from "lucide-react";
+// import {
+//   DropdownMenu,
+//   DropdownMenuTrigger,
+//   DropdownMenuLabel,
+//   DropdownMenuContent,
+//   DropdownMenuSeparator,
+//   DropdownMenuItem,
+// } from "@/components/ui/dropdown-menu";
+// import { useState } from "react";
+
+// export default function ShelterDashboard() {
+//   const [activeTab, setActiveTab] = useState<"analysis" | "requests" | null>(
+//     null
+//   );
+
+//   return (
+//     <>
+//       <div className="flex flex-col lg:grid h-[85vh] rounded-lg bg-gray-50 lg:grid-cols-3 gap-4 border">
+//         {/* Mobile Header with Dropdown */}
+//         <div className="block mb-2 lg:hidden">
+//           <div className="flex items-center justify-between px-3 pt-2">
+//             <h2 className="text-xl font-semibold text-gray-800">
+//               {activeTab === "analysis"
+//                 ? "Analysis"
+//                 : activeTab === "requests"
+//                 ? "Requests"
+//                 : "Shelter"}
+//             </h2>
+//             <DropdownMenu>
+//               <DropdownMenuTrigger asChild>
+//                 <Button variant="outline">
+//                   <Menu size={16} />
+//                 </Button>
+//               </DropdownMenuTrigger>
+//               <DropdownMenuContent className="w-40 mr-8">
+//                 <DropdownMenuLabel>Goto</DropdownMenuLabel>
+//                 <DropdownMenuSeparator />
+//                 <DropdownMenuItem
+//                   className="focus:bg-slate-200"
+//                   onClick={() => setActiveTab("analysis")}
+//                 >
+//                   Analysis
+//                 </DropdownMenuItem>
+//                 <DropdownMenuItem
+//                   className="focus:bg-slate-200"
+//                   onClick={() => setActiveTab("requests")}
+//                 >
+//                   Requests
+//                 </DropdownMenuItem>
+//               </DropdownMenuContent>
+//             </DropdownMenu>
+//           </div>
+//         </div>
+
+//         {/* Content Sections */}
+//         <div className="p-4">
+//           {activeTab === "analysis" && <p>Analysis Content</p>}
+//           {activeTab === "requests" && <p>Requests Content</p>}
+//           {!activeTab && <p>Welcome to the Shelter Dashboard</p>}
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
+
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { io, Socket } from "socket.io-client";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardFooter,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+// import { Separator } from "@/components/ui/separator";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+// import { Switch } from "@/components/ui/switch";
+// import { Label } from "@/components/ui/label";
+// import { ScrollArea } from "@/components/ui/scroll-area";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogTrigger,
+// } from "@/components/ui/dialog";
+// import {
+//   AlertDialog,
+//   AlertDialogAction,
+//   AlertDialogCancel,
+//   AlertDialogContent,
+//   AlertDialogDescription,
+//   AlertDialogFooter,
+//   AlertDialogHeader,
+//   AlertDialogTitle,
+//   AlertDialogTrigger,
+// } from "@/components/ui/alert-dialog";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import {
+//   PlusCircle,
+//   Trash2,
+//   Filter,
+//   RefreshCcw,
+//   AlertCircle,
+// } from "lucide-react";
+
+// // Types
+// interface VolunteerClaim {
+//   _id: string;
+//   volunteer_id: {
+//     _id: string;
+//     name: string;
+//     email: string;
+//     profile_image?: string;
+//   };
+//   status: "promised" | "fulfilled";
+//   timestamp: Date;
+// }
+
+// interface ShelterRequest {
+//   _id: string;
+//   food_type: string;
+//   quantity: number;
+//   image_url: string;
+//   promised_volunteers: VolunteerClaim[];
+//   fulfilled_volunteers: VolunteerClaim[];
+//   status: "in_need" | "claimed" | "fulfilled";
+//   createdAt: Date;
+// }
+
+// export default function ShelterDashboard() {
+//   const [shelterRequests, setShelterRequests] = useState<ShelterRequest[]>([]);
+//   const [selectedRequest, setSelectedRequest] = useState<ShelterRequest | null>(
+//     null
+//   );
+//   const [pendingOnly, setPendingOnly] = useState(false);
+//   const [sortBy, setSortBy] = useState<"date" | "promises" | "fulfilled">(
+//     "date"
+//   );
+//   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
+//   const [socket, setSocket] = useState<Socket | null>(null);
+//   const [isLoading, setIsLoading] = useState(true);
+
+//   // Initialize WebSocket connection
+//   useEffect(() => {
+//     const newSocket = io("http://localhost:4000");
+//     setSocket(newSocket);
+
+//     newSocket.on("connect", () => {
+//       console.log("Connected to WebSocket server");
+//     });
+
+//     newSocket.on("shelterRequestCreated", (newRequest: ShelterRequest) => {
+//       setShelterRequests((prev) => [...prev, newRequest]);
+//     });
+
+//     newSocket.on("shelterRequestUpdated", (updatedRequest: ShelterRequest) => {
+//       setShelterRequests((prev) =>
+//         prev.map((req) =>
+//           req._id === updatedRequest._id ? updatedRequest : req
+//         )
+//       );
+
+//       if (selectedRequest?._id === updatedRequest._id) {
+//         setSelectedRequest(updatedRequest);
+//       }
+//     });
+
+//     newSocket.on("shelterRequestDeleted", (deletedId: string) => {
+//       setShelterRequests((prev) => prev.filter((req) => req._id !== deletedId));
+//       if (selectedRequest?._id === deletedId) {
+//         setSelectedRequest(null);
+//       }
+//     });
+
+//     return () => {
+//       newSocket.disconnect();
+//     };
+//   }, [selectedRequest]);
+
+//   // Fetch initial data
+//   useEffect(() => {
+//     const fetchShelterRequests = async () => {
+//       try {
+//         const response = await fetch("/api/shelter-requests");
+//         if (!response.ok) throw new Error("Failed to fetch shelter requests");
+//         const data = await response.json();
+//         setShelterRequests(data);
+//       } catch (error) {
+//         console.error("Error fetching shelter requests:", error);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchShelterRequests();
+//   }, []);
+
+//   // Filter and sort requests
+//   const filteredRequests = shelterRequests
+//     .filter((request) => !pendingOnly || request.status !== "fulfilled")
+//     .sort((a, b) => {
+//       if (sortBy === "date") {
+//         return (
+//           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+//         );
+//       } else if (sortBy === "promises") {
+//         return b.promised_volunteers.length - a.promised_volunteers.length;
+//       } else {
+//         return b.fulfilled_volunteers.length - a.fulfilled_volunteers.length;
+//       }
+//     });
+
+//   // Delete request handler
+//   const handleDeleteRequest = async (id: string) => {
+//     try {
+//       const response = await fetch(`/api/shelter-requests/${id}`, {
+//         method: "DELETE",
+//       });
+
+//       if (!response.ok) throw new Error("Failed to delete shelter request");
+
+//       setShelterRequests(
+//         shelterRequests.filter((request) => request._id !== id)
+//       );
+//       if (selectedRequest?._id === id) {
+//         setSelectedRequest(null);
+//       }
+//     } catch (error) {
+//       console.error("Error deleting shelter request:", error);
+//     }
+//   };
+
+//   // Remove volunteer promise handler
+//   const handleRemoveVolunteer = async (
+//     requestId: string,
+//     volunteerId: string
+//   ) => {
+//     try {
+//       const response = await fetch(
+//         `/api/shelter-requests/${requestId}/volunteers/${volunteerId}`,
+//         {
+//           method: "DELETE",
+//         }
+//       );
+
+//       if (!response.ok) throw new Error("Failed to remove volunteer");
+
+//       // The websocket will handle the update, but we could also update the state here
+//     } catch (error) {
+//       console.error("Error removing volunteer:", error);
+//     }
+//   };
+
+//   // Status badge component
+//   const StatusBadge = ({ status }: { status: ShelterRequest["status"] }) => {
+//     const statusMap = {
+//       in_need: { label: "In Need", variant: "destructive" },
+//       claimed: { label: "Claimed", variant: "warning" },
+//       fulfilled: { label: "Fulfilled", variant: "success" },
+//     };
+
+//     const { label, variant } = statusMap[status];
+//     return <Badge variant={variant as any}>{label}</Badge>;
+//   };
+
+//   return (
+//     <div className="h-[85vh] p-4 bg-gray-50 dark:bg-gray-900">
+//       <div className="flex justify-between items-center mb-4">
+//         <h1 className="text-2xl font-bold">Shelter Request Dashboard</h1>
+//         <Dialog open={isCreatingRequest} onOpenChange={setIsCreatingRequest}>
+//           <DialogTrigger asChild>
+//             <Button className="flex items-center">
+//               <PlusCircle className="mr-2 h-4 w-4" />
+//               Create New Request
+//             </Button>
+//           </DialogTrigger>
+//           <DialogContent>
+//             <DialogHeader>
+//               <DialogTitle>Create New Shelter Request</DialogTitle>
+//             </DialogHeader>
+//             {/* Form would go here */}
+//             <p className="text-muted-foreground">
+//               Form implementation left out for brevity
+//             </p>
+//             <div className="flex justify-end gap-2">
+//               <Button
+//                 variant="outline"
+//                 onClick={() => setIsCreatingRequest(false)}
+//               >
+//                 Cancel
+//               </Button>
+//               <Button>Create Request</Button>
+//             </div>
+//           </DialogContent>
+//         </Dialog>
+//       </div>
+
+//       <div className="flex mb-4 gap-4">
+//         <div className="flex items-center space-x-2">
+//           <Switch
+//             id="pending-filter"
+//             checked={pendingOnly}
+//             onCheckedChange={setPendingOnly}
+//           />
+//           <Label htmlFor="pending-filter">Pending Requests Only</Label>
+//         </div>
+//         <div className="flex items-center space-x-2">
+//           <Label htmlFor="sort-by">Sort by:</Label>
+//           <Select
+//             value={sortBy}
+//             onValueChange={(value) => setSortBy(value as any)}
+//           >
+//             <SelectTrigger className="w-[180px]">
+//               <SelectValue placeholder="Sort by" />
+//             </SelectTrigger>
+//             <SelectContent>
+//               <SelectItem value="date">Date Created</SelectItem>
+//               <SelectItem value="promises">Most Promises</SelectItem>
+//               <SelectItem value="fulfilled">Fulfilled Count</SelectItem>
+//             </SelectContent>
+//           </Select>
+//         </div>
+//       </div>
+
+//       <div className="h-[calc(85vh-120px)] grid grid-cols-1 md:grid-cols-2 gap-4">
+//         {/* Left panel - Requests List */}
+//         <Card className="col-span-1 md:col-span-1 h-full">
+//           <CardHeader className="pb-2">
+//             <CardTitle>All Shelter Requests</CardTitle>
+//             <CardDescription>
+//               {filteredRequests.length} requests found
+//             </CardDescription>
+//           </CardHeader>
+//           <CardContent>
+//             <ScrollArea className="h-[calc(85vh-220px)]">
+//               {isLoading ? (
+//                 <div className="flex justify-center items-center h-full">
+//                   <RefreshCcw className="h-6 w-6 animate-spin" />
+//                 </div>
+//               ) : filteredRequests.length === 0 ? (
+//                 <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
+//                   <AlertCircle className="h-10 w-10 mb-2" />
+//                   <p>No shelter requests found</p>
+//                 </div>
+//               ) : (
+//                 <div className="space-y-3">
+//                   {filteredRequests.map((request) => (
+//                     <Card
+//                       key={request._id}
+//                       className={`cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+//                         selectedRequest?._id === request._id
+//                           ? "border-primary"
+//                           : ""
+//                       }`}
+//                       onClick={() => setSelectedRequest(request)}
+//                     >
+//                       <CardHeader className="p-4 pb-2">
+//                         <div className="flex justify-between items-start">
+//                           <div>
+//                             <CardTitle className="text-lg">
+//                               {request.food_type}
+//                             </CardTitle>
+//                             <CardDescription>
+//                               Created:{" "}
+//                               {new Date(request.createdAt).toLocaleDateString()}
+//                             </CardDescription>
+//                           </div>
+//                           <StatusBadge status={request.status} />
+//                         </div>
+//                       </CardHeader>
+//                       <CardContent className="p-4 pt-0">
+//                         <div className="text-sm">
+//                           <div className="flex justify-between">
+//                             <span>Quantity: {request.quantity}</span>
+//                             <span>
+//                               Promises: {request.promised_volunteers.length} /
+//                               Fulfilled: {request.fulfilled_volunteers.length}
+//                             </span>
+//                           </div>
+//                         </div>
+//                       </CardContent>
+//                       <CardFooter className="p-2 justify-end">
+//                         <AlertDialog>
+//                           <AlertDialogTrigger asChild>
+//                             <Button
+//                               size="sm"
+//                               variant="ghost"
+//                               className="text-destructive hover:text-destructive"
+//                               onClick={(e) => e.stopPropagation()}
+//                             >
+//                               <Trash2 className="h-4 w-4" />
+//                             </Button>
+//                           </AlertDialogTrigger>
+//                           <AlertDialogContent>
+//                             <AlertDialogHeader>
+//                               <AlertDialogTitle>
+//                                 Delete Request
+//                               </AlertDialogTitle>
+//                               <AlertDialogDescription>
+//                                 Are you sure you want to delete this shelter
+//                                 request? This action cannot be undone.
+//                               </AlertDialogDescription>
+//                             </AlertDialogHeader>
+//                             <AlertDialogFooter>
+//                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+//                               <AlertDialogAction
+//                                 onClick={() => handleDeleteRequest(request._id)}
+//                               >
+//                                 Delete
+//                               </AlertDialogAction>
+//                             </AlertDialogFooter>
+//                           </AlertDialogContent>
+//                         </AlertDialog>
+//                       </CardFooter>
+//                     </Card>
+//                   ))}
+//                 </div>
+//               )}
+//             </ScrollArea>
+//           </CardContent>
+//         </Card>
+
+//         {/* Right panel - Request Details */}
+//         <Card className="col-span-1 md:col-span-1 h-full">
+//           {selectedRequest ? (
+//             <>
+//               <CardHeader>
+//                 <div className="flex justify-between items-start">
+//                   <div>
+//                     <CardTitle>{selectedRequest.food_type}</CardTitle>
+//                     <CardDescription>
+//                       Quantity: {selectedRequest.quantity} • Created:{" "}
+//                       {new Date(selectedRequest.createdAt).toLocaleString()}
+//                     </CardDescription>
+//                   </div>
+//                   <StatusBadge status={selectedRequest.status} />
+//                 </div>
+//               </CardHeader>
+//               <CardContent>
+//                 <Tabs defaultValue="promised">
+//                   <TabsList className="mb-4">
+//                     <TabsTrigger value="promised">
+//                       Promised Volunteers (
+//                       {selectedRequest.promised_volunteers.length})
+//                     </TabsTrigger>
+//                     <TabsTrigger value="fulfilled">
+//                       Fulfilled Volunteers (
+//                       {selectedRequest.fulfilled_volunteers.length})
+//                     </TabsTrigger>
+//                   </TabsList>
+//                   <TabsContent value="promised">
+//                     <ScrollArea className="h-[calc(85vh-340px)]">
+//                       {selectedRequest.promised_volunteers.length === 0 ? (
+//                         <div className="text-center py-8 text-muted-foreground">
+//                           No promised volunteers yet
+//                         </div>
+//                       ) : (
+//                         <div className="space-y-3">
+//                           {selectedRequest.promised_volunteers.map((claim) => (
+//                             <Card key={claim._id} className="p-3">
+//                               <div className="flex justify-between items-center">
+//                                 <div className="flex items-center gap-3">
+//                                   <Avatar>
+//                                     <AvatarImage
+//                                       src={claim.volunteer_id.profile_image}
+//                                     />
+//                                     <AvatarFallback>
+//                                       {claim.volunteer_id.name
+//                                         .substring(0, 2)
+//                                         .toUpperCase()}
+//                                     </AvatarFallback>
+//                                   </Avatar>
+//                                   <div>
+//                                     <div className="font-medium">
+//                                       {claim.volunteer_id.name}
+//                                     </div>
+//                                     <div className="text-sm text-muted-foreground">
+//                                       {claim.volunteer_id.email}
+//                                     </div>
+//                                   </div>
+//                                 </div>
+//                                 <Button
+//                                   variant="ghost"
+//                                   size="icon"
+//                                   onClick={() =>
+//                                     handleRemoveVolunteer(
+//                                       selectedRequest._id,
+//                                       claim._id
+//                                     )
+//                                   }
+//                                 >
+//                                   <Trash2 className="h-4 w-4 text-destructive" />
+//                                 </Button>
+//                               </div>
+//                             </Card>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </ScrollArea>
+//                   </TabsContent>
+//                   <TabsContent value="fulfilled">
+//                     <ScrollArea className="h-[calc(85vh-340px)]">
+//                       {selectedRequest.fulfilled_volunteers.length === 0 ? (
+//                         <div className="text-center py-8 text-muted-foreground">
+//                           No fulfilled deliveries yet
+//                         </div>
+//                       ) : (
+//                         <div className="space-y-3">
+//                           {selectedRequest.fulfilled_volunteers.map((claim) => (
+//                             <Card key={claim._id} className="p-3">
+//                               <div className="flex justify-between items-center">
+//                                 <div className="flex items-center gap-3">
+//                                   <Avatar>
+//                                     <AvatarImage
+//                                       src={claim.volunteer_id.profile_image}
+//                                     />
+//                                     <AvatarFallback>
+//                                       {claim.volunteer_id.name
+//                                         .substring(0, 2)
+//                                         .toUpperCase()}
+//                                     </AvatarFallback>
+//                                   </Avatar>
+//                                   <div>
+//                                     <div className="font-medium">
+//                                       {claim.volunteer_id.name}
+//                                     </div>
+//                                     <div className="text-sm text-muted-foreground">
+//                                       Completed:{" "}
+//                                       {new Date(
+//                                         claim.timestamp
+//                                       ).toLocaleString()}
+//                                     </div>
+//                                   </div>
+//                                 </div>
+//                               </div>
+//                             </Card>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </ScrollArea>
+//                   </TabsContent>
+//                 </Tabs>
+//               </CardContent>
+//             </>
+//           ) : (
+//             <div className="flex flex-col items-center justify-center h-full text-center p-4 text-muted-foreground">
+//               <div className="mb-4">
+//                 <Filter className="h-12 w-12 mb-2" />
+//                 <h3 className="text-lg font-medium">No Request Selected</h3>
+//               </div>
+//               <p>Select a shelter request from the list to view details</p>
+//             </div>
+//           )}
+//         </Card>
+//       </div>
+//     </div>
+//   );
+// }

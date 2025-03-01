@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
 import FoodDonation from "@/models/FoodDonation";
-import VolunteerAssignment from "@/models/VolunteerClaim";
+import VolunteerClaim, { IVolunteerClaim } from "@/models/VolunteerClaim";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { io } from "@/server"; // WebSocket for real-time updates
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if the volunteer already claimed this donation
-    const existingAssignment = await VolunteerAssignment.findOne({
+    const existingAssignment = await VolunteerClaim.findOne({
       volunteer_id: session.user.id,
       donation_id: donation._id,
     });
@@ -56,14 +56,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Assign the donation to the volunteer
-    const assignment = await VolunteerAssignment.create({
+    const assignment = await VolunteerClaim.create({
       volunteer_id: session.user.id,
       donation_id: donation._id,
-      status: "claimed", // ✅ Changed from "assigned" to "claimed"
+      shelter_request_status: "claimed", // ✅ Changed from "assigned" to "claimed"
     });
 
-    // Update the donation status to "claimed"
-    donation.status = "claimed"; // ✅ Changed from "assigned"
     await donation.save();
 
     // Emit WebSocket event for real-time updates

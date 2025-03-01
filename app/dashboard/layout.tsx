@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: IChildren) {
   return (
     <div className="flex justify-center min-h-screen">
       <div className="container max-w-[90%]">
-        <nav className="flex items-center justify-between py-2 mt-4 bg-white rounded-md mb-5">
+        <nav className="flex items-center justify-between py-2 mt-4 mb-5 bg-white rounded-md">
           {/* Left Side: Welcome Message */}
           <div className="font-semibold sm:max-w-[180px] md:max-w-[240px] md:text-2xl text-xl">
             {`${getGreetings()}, ${name}`}

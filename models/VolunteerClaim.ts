@@ -1,31 +1,68 @@
-import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import mongoose, { Schema, Document, Types, Model } from "mongoose";
 
-export interface IFoodDonation extends Document {
-  donor_id: Types.ObjectId;
-  food_type: string;
-  quantity: number;
-  image_url: string;
-  volunteer_pool_size: number;
-  claimed_volunteers: Types.ObjectId[];
-  location: string; // Added pickup address
-  status: "available" | "closed";
-  createdAt: Date;
+export interface IVolunteerClaim extends Document {
+  volunteer_id: Types.ObjectId;
+  shelter_request_id: Types.ObjectId;
+  donation_id: Types.ObjectId;
+  shelter_request_status: "promised" | "fulfilled" | "cancelled";
+  donor_request_status: "claimed" | "donated" | "cancelled";
+  claimedAt: Date;
 }
 
-const FoodDonationSchema = new Schema<IFoodDonation>({
-  donor_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  food_type: { type: String, required: true },
-  quantity: { type: Number, required: true },
-  image_url: { type: String, required: true },
-  volunteer_pool_size: { type: Number, required: true },
-  location: { type: String, required: true }, // Added location field
-  claimed_volunteers: [{ type: Schema.Types.ObjectId, ref: "VolunteerClaim" }],
-  status: { type: String, enum: ["available", "closed"], default: "available" },
-  createdAt: { type: Date, default: Date.now },
+const VolunteerClaimSchema = new Schema<IVolunteerClaim>({
+  volunteer_id: {
+    type: Schema.Types.ObjectId,
+    ref: "UserDetails",
+    required: true,
+  },
+  shelter_request_id: {
+    type: Schema.Types.ObjectId,
+    ref: "ShelterRequest",
+    required: true,
+  },
+  donation_id: {
+    type: Schema.Types.ObjectId,
+    ref: "FoodDonation",
+    required: true,
+  },
+  shelter_request_status: {
+    type: String,
+    enum: ["promised", "fulfilled", "cancelled"],
+    default: "promised",
+  },
+  donor_request_status: {
+    type: String,
+    enum: ["claimed", "donated", "cancelled"],
+    default: "claimed",
+  },
+  claimedAt: { type: Date, default: Date.now },
 });
 
-const FoodDonation: Model<IFoodDonation> =
-  mongoose.models.FoodDonation ||
-  mongoose.model<IFoodDonation>("FoodDonation", FoodDonationSchema);
+// ✅ Indexing for performance
+VolunteerClaimSchema.index({
+  volunteer_id: 1,
+  shelter_request_id: 1,
+  donation_id: 1,
+});
 
-export default FoodDonation;
+// ✅ Unique index to prevent duplicate claims
+VolunteerClaimSchema.index(
+  { volunteer_id: 1, donation_id: 1 },
+  { unique: true }
+);
+
+// ✅ Middleware: Automatically update `FoodDonation.claimed_volunteers`
+VolunteerClaimSchema.post("save", async function (doc, next) {
+  await mongoose.model("FoodDonation").updateOne(
+    { _id: doc.donation_id },
+    { $addToSet: { claimed_volunteers: doc._id } } // Ensure no duplicates
+  );
+  next();
+});
+
+// Export the model
+const VolunteerClaim: Model<IVolunteerClaim> =
+  mongoose.models.VolunteerClaim ||
+  mongoose.model<IVolunteerClaim>("VolunteerClaim", VolunteerClaimSchema);
+
+export default VolunteerClaim;

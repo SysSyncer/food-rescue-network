@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <SessionProviderWrapper>
           <Toaster
-            position="top-right"
+            position="bottom-right"
             expand={false}
             closeButton
             richColors

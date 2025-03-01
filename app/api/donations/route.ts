@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     // Fetch all donations by the logged-in donor (lean for better performance)
     const donations = await FoodDonation.find({ donor_id: session.user.id })
       .select(
-        "food_type quantity pickup_address expiry_date image_url volunteer_pool_size status createdAt"
+        "food_type quantity pickup_address expiry_date claimed_volunteers image_url volunteer_pool_size status createdAt"
       )
       .lean();
 
@@ -107,6 +107,76 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching donations:", error);
     return NextResponse.json(
       { error: "Failed to fetch donations" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "donor") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const donationId = searchParams.get("donationId");
+
+    if (!donationId) {
+      return NextResponse.json(
+        { error: "Donation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Find the donation and verify ownership
+    const donation = await FoodDonation.findOne({
+      _id: donationId,
+      donor_id: session.user.id,
+    });
+
+    if (!donation) {
+      return NextResponse.json(
+        { error: "Donation not found or unauthorized" },
+        { status: 404 }
+      );
+    }
+
+    // Notify claimed volunteers if any
+    if (donation.claimed_volunteers?.length > 0) {
+      donation.claimed_volunteers.forEach((volunteerId) => {
+        const volunteerIdStr = volunteerId.toString(); // Convert ObjectId to string
+        const socketId = connectedUsers.get(volunteerIdStr);
+
+        if (socketId) {
+          io.to(socketId).emit("donation_deleted", { donationId });
+          console.log(
+            `Notified volunteer ${volunteerIdStr} about donation deletion`
+          );
+        }
+      });
+    }
+
+    // Delete the donation
+    await FoodDonation.deleteOne({ _id: donationId });
+
+    // Notify donor that the deletion was successful
+    const donorSocketId = connectedUsers.get(session.user.id);
+    if (donorSocketId) {
+      io.to(donorSocketId).emit("donation_removed", { donationId });
+      console.log(`Notified donor ${session.user.id} about donation removal`);
+    }
+
+    return NextResponse.json(
+      { message: "Donation deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting donation:", error);
+    return NextResponse.json(
+      { error: "Failed to delete donation" },
       { status: 500 }
     );
   }

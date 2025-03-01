@@ -124,8 +124,8 @@ export default function FoodDonationForm() {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-4 border border-solid rounded-md">
-      <h1 className="text-2xl font-bold mb-4">Create Food Donation</h1>
+    <div className="max-w-lg p-4 mx-auto border border-solid rounded-md">
+      <h1 className="mb-4 text-2xl font-bold">Create Food Donation</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label>Food Type</Label>
@@ -156,12 +156,12 @@ export default function FoodDonationForm() {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between px-4 py-2"
+                className="justify-between w-full px-4 py-2"
               >
                 {formData.expiry_date
                   ? format(formData.expiry_date, "PPP")
                   : "Select a date"}
-                <CalendarIcon className="ml-auto h-4 w-4" />
+                <CalendarIcon className="w-4 h-4 ml-auto" />
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-0">
@@ -211,11 +211,11 @@ export default function FoodDonationForm() {
         <div className="grid grid-cols-3 gap-2">
           {previewImages.map((src, idx) => (
             <Card key={idx} className="w-full shadow-none">
-              <CardContent className="rounded-md p-1">
+              <CardContent className="p-1 rounded-md">
                 <img
                   src={src}
                   alt={`Preview ${idx}`}
-                  className="w-full h-24 object-cover rounded-md"
+                  className="object-cover w-full h-24 rounded-md"
                 />
               </CardContent>
             </Card>
@@ -230,7 +230,11 @@ export default function FoodDonationForm() {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Submitting..." : "Submit Donation"}
           </Button>
         </div>

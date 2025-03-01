@@ -3,13 +3,14 @@ import mongoose, { Schema, Document, Model, Types } from "mongoose";
 export interface IFoodDonation extends Document {
   donor_id: Types.ObjectId;
   food_type: string;
+  donation_description: string;
   quantity: number;
   image_url: string[];
   volunteer_pool_size: number;
   claimed_volunteers: Types.ObjectId[];
   pickup_address: string;
-  expiry_date: Date; // ✅ Added expiry_date
-  status: "available" | "closed";
+  expiry_date: Date;
+  status: "available" | "closed" | "canceled";
   createdAt: Date;
 }
 
@@ -17,22 +18,31 @@ const FoodDonationSchema = new Schema<IFoodDonation>(
   {
     donor_id: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "UserCredentials",
       required: true,
       index: true,
-    }, // ✅ Indexed for performance
+    },
     food_type: { type: String, required: true },
-    quantity: { type: Number, required: true },
+    donation_description: { type: String },
+    quantity: {
+      type: Number,
+      required: true,
+      min: [1, "Quantity must be at least 1"], // ✅ Ensuring a positive value
+    },
     image_url: { type: [String], required: true },
-    volunteer_pool_size: { type: Number, required: true },
+    volunteer_pool_size: {
+      type: Number,
+      required: true,
+      min: [1, "Volunteer pool size must be at least 1"], // ✅ Ensuring a positive value
+    },
     pickup_address: { type: String, required: true },
-    expiry_date: { type: Date, required: true }, // ✅ Added expiry_date
+    expiry_date: { type: Date, required: true },
     claimed_volunteers: [
       { type: Schema.Types.ObjectId, ref: "VolunteerClaim" },
     ],
     status: {
       type: String,
-      enum: ["available", "closed"],
+      enum: ["available", "closed", "canceled"], // ✅ Added "canceled"
       default: "available",
     },
   },
