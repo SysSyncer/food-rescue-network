@@ -64,7 +64,7 @@ export default function SignInPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-none">
         <CardHeader>
           <CardTitle className="text-3xl font-semibold">Sign In</CardTitle>
         </CardHeader>

@@ -36,10 +36,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Ensure UserDetails document exists
-        const existingDetails = await UserDetails.findOne({ userId: user._id });
+        const existingDetails = await UserDetails.findOne({ _id: user._id });
         if (!existingDetails) {
           await UserDetails.create({
-            userId: user._id,
+            _id: user._id,
             name: "",
             phone: "",
             location: "",
@@ -49,7 +49,7 @@ export const authOptions: NextAuthOptions = {
 
         // ✅ Generate accessToken
         const accessToken = jwt.sign(
-          { userId: user._id.toString(), email: user.email, role: user.role },
+          { _id: user._id.toString(), email: user.email, role: user.role },
           process.env.NEXT_PUBLIC_JWT_SECRET!,
           { expiresIn: "1h" }
         );

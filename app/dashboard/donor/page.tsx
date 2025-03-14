@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import io from "socket.io-client";
+// import io from "socket.io-client";
 import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,13 +26,16 @@ export default function DonorDashboard() {
   type Post = {
     _id: string;
     food_type: string;
-    expiry_date: Date;
+    donation_description: string;
+    quantity: number;
     image_url: string[];
-    status: string;
-    createdAt: string;
     volunteer_pool_size: number;
     claimed_volunteers: string[];
-    description?: string; // Optional field for donation description
+    pickup_addess: string;
+    expiry_date: Date;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
   };
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -52,8 +55,11 @@ export default function DonorDashboard() {
     async function fetchDonations() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/donations`);
-        if (!res.ok) throw new Error("Failed to fetch donations");
+        const res = await fetch(`/api/donor/donations`);
+        if (!res.ok) {
+          toast.error("Failed to fetch donations");
+          return;
+        }
 
         const data = await res.json();
         setPosts(data);
@@ -66,18 +72,18 @@ export default function DonorDashboard() {
 
     fetchDonations();
 
-    if (!session?.user) return;
+    // if (!session?.user) return;
 
-    // WebSocket connection
-    const socket = io(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4200"
-    );
+    // // WebSocket connection
+    // const socket = io(
+    //   process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4200"
+    // );
 
-    socket.emit("register", session.user.id); // Register the user on connection
+    // socket.emit("register", session.user.id); // Register the user on connection
 
-    socket.on("donation_created", (newDonation: Post) => {
-      setPosts((prev) => [newDonation, ...prev]);
-    });
+    // socket.on("donation_created", (newDonation: Post) => {
+    //   setPosts((prev) => [newDonation, ...prev]);
+    // });
 
     // socket.on("donation_updated", (updatedDonation: Post) => {
     //   setPosts((prev) =>
@@ -87,14 +93,14 @@ export default function DonorDashboard() {
     //   );
     // });
 
-    socket.on("donation_removed", ({ donationId }) => {
-      console.log("Donation removed:", donationId);
-      setPosts((prev) => prev.filter((post) => post._id !== donationId));
-    });
+    // socket.on("donation_removed", ({ donationId }) => {
+    //   console.log("Donation removed:", donationId);
+    //   setPosts((prev) => prev.filter((post) => post._id !== donationId));
+    // });
 
-    return () => {
-      socket.disconnect();
-    };
+    // return () => {
+    //   socket.disconnect();
+    // };
   }, [session]);
 
   useEffect(() => {
@@ -105,17 +111,20 @@ export default function DonorDashboard() {
 
   async function handleDelete(donationId: string) {
     try {
-      const res = await fetch(`/api/donations?donationId=${donationId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete donation");
-
+      const res = await fetch(
+        `/api/donor/donations/donation?donationId=${donationId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok) {
+        toast.error("Failed to delete donation");
+        return;
+      }
       // Remove the deleted donation from UI
       setPosts((prevPosts) =>
         prevPosts.filter((post) => post._id !== donationId)
       );
-
       toast.success("Donation deleted successfully");
       setSelectedPost(null);
     } catch (error) {
@@ -147,12 +156,16 @@ export default function DonorDashboard() {
     });
   };
 
+  function handleComplete(_id: string): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 p-2 md:p-4 h-[85vh] bg-gray-50 rounded-lg border border-gray-200">
       {/* Mobile header */}
       <div className="block mb-2 lg:hidden">
         <div className="flex items-center justify-between px-2 pt-1">
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-2xl font-bold text-gray-800">
             {selectedPost ? "Donation Details" : "Your Donations"}
           </h2>
           {selectedPost ? (
@@ -165,13 +178,21 @@ export default function DonorDashboard() {
               <ArrowLeft size={16} /> Back
             </Button>
           ) : (
-            <Button
-              size="sm"
-              className="bg-light-black"
-              onClick={() => router.push("/dashboard/donor/create-donation")}
-            >
-              <Plus size={16} /> Add
-            </Button>
+            <div>
+              {posts ? (
+                <div></div>
+              ) : (
+                <Button
+                  size="sm"
+                  className="bg-light-black"
+                  onClick={() =>
+                    router.push("/dashboard/donor/create-donation")
+                  }
+                >
+                  <Plus size={16} /> Add
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -183,19 +204,23 @@ export default function DonorDashboard() {
         } lg:block h-full overflow-y-auto bg-white rounded-lg shadow-sm`}
       >
         <div className="items-center justify-between hidden p-4 border-b lg:flex">
-          <Button
-            className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black"
-            onClick={() => router.push("/dashboard/donor/create-donation")}
-          >
-            <Plus size={16} /> Add Donation
-          </Button>
+          {posts.length !== 0 ? (
+            <Button
+              className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black"
+              onClick={() => router.push("/dashboard/donor/create-donation")}
+            >
+              <Plus size={16} /> Add Donation
+            </Button>
+          ) : (
+            <div></div>
+          )}
         </div>
 
         {loading ? (
           // Loading skeletons
           <div className="p-3 space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex p-2 gap-3">
+              <div key={i} className="flex gap-3 p-2">
                 <Skeleton className="w-32 h-24 rounded-md" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="w-24 h-5" />
@@ -230,7 +255,7 @@ export default function DonorDashboard() {
                   onClick={() => handlePostClick(post)}
                 >
                   <CardContent className="flex w-full p-3">
-                    <div className="relative h-24 overflow-hidden min-w-32 rounded-md">
+                    <div className="relative h-24 overflow-hidden rounded-md min-w-32">
                       {post.image_url && post.image_url.length > 0 ? (
                         <Image
                           src={post.image_url[0]}
@@ -285,12 +310,12 @@ export default function DonorDashboard() {
 
       {/* Detail Panel */}
       {selectedPost ? (
-        <div className="p-4 bg-white rounded-lg col-span-2 shadow-sm">
+        <div className="col-span-2 p-4 bg-white rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <Button
               variant="outline"
               size="sm"
-              className="items-center hidden lg:flex gap-1"
+              className="items-center hidden gap-1 lg:flex"
               onClick={() => setSelectedPost(null)}
             >
               <ArrowLeft size={16} /> Back to List
@@ -324,7 +349,7 @@ export default function DonorDashboard() {
               </div>
 
               {selectedPost.image_url.length > 1 && (
-                <div className="flex justify-center mt-3 gap-2">
+                <div className="flex justify-center gap-2 mt-3">
                   <Button
                     variant="outline"
                     size="sm"
@@ -351,7 +376,7 @@ export default function DonorDashboard() {
           )}
 
           {/* Donation Details */}
-          <div className="p-4 rounded-lg bg-gray-50 space-y-3">
+          <div className="p-4 space-y-3 rounded-lg bg-gray-50">
             <div className="flex items-start justify-between">
               <h3 className="text-lg font-medium text-gray-800">
                 {selectedPost.food_type}
@@ -364,11 +389,13 @@ export default function DonorDashboard() {
               </Badge>
             </div>
 
-            {selectedPost.description && (
-              <p className="text-gray-600">{selectedPost.description}</p>
+            {selectedPost.donation_description && (
+              <p className="text-gray-600">
+                {selectedPost.donation_description}
+              </p>
             )}
 
-            <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2">
               <div className="flex items-center text-sm text-gray-600">
                 <Calendar size={16} className="mr-2 text-gray-400" />
                 <div>
@@ -408,22 +435,26 @@ export default function DonorDashboard() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end mt-6 gap-3">
+          <div className="flex justify-center gap-3 mt-6 md:justify-end">
             <Button
               variant="outline"
               onClick={() => handleDelete(selectedPost._id)}
+              className="hover:bg-red-100 hover:text-red-800"
             >
               Delete Donation
             </Button>
             {selectedPost.status !== "completed" && (
-              <Button className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black">
-                Mark as Completed
+              <Button
+                className="lg:bg-light-black lg:hover:bg-light-green lg:hover:text-light-black"
+                onClick={() => handleComplete(selectedPost._id)}
+              >
+                Mark as Closed
               </Button>
             )}
           </div>
         </div>
       ) : (
-        <div className="hidden p-8 bg-white rounded-lg lg:block col-span-2 shadow-sm">
+        <div className="hidden col-span-2 p-8 overflow-y-scroll bg-white rounded-lg shadow-sm lg:block">
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="mb-4 text-gray-400">
               <ChevronLeft size={64} />

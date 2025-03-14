@@ -38,7 +38,10 @@ export default function ProfilePage() {
             Authorization: `Bearer ${session.user.accessToken}`,
           },
         });
-        if (!res.ok) throw new Error("Failed to fetch profile");
+        if (!res.ok) {
+          toast.error("No Internet");
+          return;
+        }
 
         const data = await res.json();
         setName(data.name ?? "");
@@ -66,7 +69,10 @@ export default function ProfilePage() {
         },
       });
 
-      if (!res.ok) throw new Error("Failed to update profile.");
+      if (!res.ok) {
+        toast.error("No Internet");
+      }
+
       toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error("Error updating profile.");
@@ -92,10 +98,15 @@ export default function ProfilePage() {
         },
       });
 
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) {
+        toast.error("Upload failed");
+        return;
+      }
 
       const data = await res.json();
-      if (!data.profileImage) throw new Error("Invalid response from server");
+      if (!data.profileImage) {
+        toast.error("Invalid response from server");
+      }
 
       setProfileImage(data.profileImage || defaultProfileIcon.src);
       toast.success("Profile image updated!");
@@ -126,7 +137,7 @@ export default function ProfilePage() {
             )}
             <AvatarFallback>?</AvatarFallback>
           </Avatar>
-          <Label className="px-4 py-2 mt-2 bg-gray-200 cursor-pointer rounded-md hover:bg-gray-300">
+          <Label className="px-4 py-2 mt-2 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300">
             Change Picture
             <Input
               type="file"

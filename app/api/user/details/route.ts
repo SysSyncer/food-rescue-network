@@ -15,10 +15,11 @@ export async function GET() {
 
     await connectMongo();
 
-    const userDetails = await UserDetails.findOne({ userId: session.user.id })
+    const userDetails = await UserDetails.findOne({ _id: session.user.id })
       .select("name phone location profileImage")
       .lean<IUserDetails>();
 
+    console.log(userDetails);
     if (!userDetails) {
       return NextResponse.json(
         { error: "User details not found" },
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     const { name, phone, location, profileImage } = await req.json();
 
     const updatedUser = await UserDetails.findOneAndUpdate(
-      { userId: session.user.id },
+      { _id: session.user.id },
       { $set: { name, phone, location, profileImage } },
       { new: true, upsert: true } // Creates a new document if one doesn't exist
     );
@@ -179,7 +180,7 @@ export async function PATCH(req: Request) {
     const profileImage = uploadResult.secure_url;
 
     await UserDetails.findOneAndUpdate(
-      { userId: session.user.id },
+      { _id: session.user.id },
       { $set: { profileImage } },
       { new: true, upsert: true }
     );

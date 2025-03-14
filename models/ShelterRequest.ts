@@ -5,7 +5,7 @@ export interface IShelterRequest extends Document {
   food_type: string;
   request_description: string;
   quantity: number;
-  image_url?: string;
+  image_url?: string[];
   promised_volunteers: Types.ObjectId[];
   fulfilled_volunteers: Types.ObjectId[];
   status: "in_need" | "fulfilled" | "cancelled";
@@ -15,7 +15,7 @@ export interface IShelterRequest extends Document {
 const ShelterRequestSchema = new Schema<IShelterRequest>({
   shelter_id: {
     type: Schema.Types.ObjectId,
-    ref: "UserDetails", // ✅ Changed from "User" to "UserDetails"
+    ref: "UserDetails", // ✅ ref to "UserDetails"
     required: true,
     index: true,
   },
@@ -26,7 +26,7 @@ const ShelterRequestSchema = new Schema<IShelterRequest>({
     required: true,
     min: [1, "Quantity must be at least 1"], // ✅ Ensure positive quantity
   },
-  image_url: { type: String },
+  image_url: { type: [String] },
   promised_volunteers: [
     { type: Schema.Types.ObjectId, ref: "VolunteerClaim", default: [] },
   ],

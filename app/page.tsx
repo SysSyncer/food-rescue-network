@@ -116,18 +116,18 @@ export default function Home() {
                 <Separator className="my-5" />
                 <div>
                   <h1 className="mb-5 text-2xl font-semibold">Testimonials</h1>
-                  <div className="grid grid-cols-3 gap-5">
-                    <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light ">
+                  <div className="grid lg:grid-cols-3 gap-5">
+                    <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light border-2 border-solid border-slate-400">
                       <span className="text-2xl font-bold">0</span>
                       <h1 className="font-medium text-center">Meals Rescued</h1>
                     </div>
-                    <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light ">
+                    <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light border-2 border-solid border-slate-400">
                       <span className="text-2xl font-bold">0</span>
                       <h1 className="font-medium text-center">
                         Volunteers Engaged
                       </h1>
                     </div>
-                    <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light ">
+                    <div className="flex flex-col items-center px-2 py-5 rounded-md bg-very-light border-2 border-solid border-slate-400">
                       <span className="text-2xl font-bold">0</span>
                       <h1 className="font-medium text-center">
                         Shelters Supported
@@ -138,6 +138,20 @@ export default function Home() {
               </div>
             </section>
           </main>
+
+          <footer className="fixed inset-x-0 bottom-0">
+            <div className="h-16 bg-slate-600 border-t-2 border-solid border-light-green flex justify-center items-center">
+              <p className="text-white font-medium">
+                Made by{" "}
+                <a
+                  href="https://github.com/syssyncer"
+                  className="hover:text-light-green hover:underline font-bold"
+                >
+                  Syssyncer
+                </a>
+              </p>
+            </div>
+          </footer>
         </div>
       )}
     </>

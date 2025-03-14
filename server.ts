@@ -2,7 +2,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 
-const PORT = 4200;
+const PORT = 4000;
 
 // Use a global variable to prevent multiple instances
 declare global {

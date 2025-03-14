@@ -29,12 +29,12 @@ export default function DashboardLayout({ children }: IChildren) {
   useEffect(() => {
     const fetchUserDetails = async () => {
       if (!session?.user) return; // ✅ Prevent API call if user is not available
-
       try {
         const res = await fetch("/api/user/details");
-
-        if (!res.ok) throw new Error("Failed to fetch user details");
-
+        if (!res.ok)
+          toast.error(
+            "Failed to fetch user details. Try to connect with the Internet"
+          );
         const data = await res.json();
         setName(data.name || "");
         setProfileImage(data.profileImage || null);
@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: IChildren) {
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="cursor-pointer">
+                <Avatar className="w-[50px] h-[50px] md:w-[60px] md:h-[60px] cursor-pointer">
                   <AvatarImage
                     src={profileImage || "/defaultProfile.png"}
                     alt="Profile"

@@ -2,8 +2,58 @@ import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/connectMongo";
 import FoodDonation from "@/models/FoodDonation";
 import { getServerSession } from "next-auth";
+import VolunteerClaim from "@/models/VolunteerClaim";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { io, connectedUsers } from "@/server"; // Import WebSocket server
+
+export async function GET(request: NextRequest) {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "donor") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const donationId = searchParams.get("donationId");
+
+    if (!donationId) {
+      return NextResponse.json(
+        { error: "Donation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const donation = await FoodDonation.findById(donationId)
+      .populate({ path: "donor_id", select: "email" }) // ✅ Simplified
+      .populate({
+        path: "claimed_volunteers",
+        model: "VolunteerClaim",
+        populate: { path: "volunteer_id", select: "name email" }, // ✅ Simplified
+      })
+      .lean();
+
+    if (!donation) {
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
+    }
+
+    if (donation.donor_id.toString() !== session.user.id) {
+      // ✅ Optimized
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    return NextResponse.json(donation, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching donation:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch donation" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   await connectMongo();
@@ -55,6 +105,7 @@ export async function POST(request: NextRequest) {
     // Create donation object
     const donationData = {
       donor_id: session.user.id,
+      donation_description: data.donation_description,
       food_type: data.food_type,
       quantity: Number(data.quantity),
       pickup_address: data.pickup_address,
@@ -69,44 +120,18 @@ export async function POST(request: NextRequest) {
     console.log("Created donation document: ", donation);
 
     // Emit WebSocket event to notify donor of new donation
-    const socketId = connectedUsers.get(session.user.id);
-    console.log("Socket id: ", socketId);
-    if (socketId) {
-      io.to(socketId).emit("donation_created", donation);
-      console.log(`Real-time update sent to donor ${session.user.id}`);
-    }
+    // const socketId = connectedUsers.get(session.user.id);
+    // console.log("Socket id: ", socketId);
+    // if (socketId) {
+    //   io.to(socketId).emit("donation_created", donation);
+    //   console.log(`Real-time update sent to donor ${session.user.id}`);
+    // }
 
     return NextResponse.json(donation, { status: 201 });
   } catch (error) {
     console.error("Error creating donation:", error);
     return NextResponse.json(
       { error: "Failed to create donation" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: NextRequest) {
-  await connectMongo();
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "donor") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
-
-  try {
-    // Fetch all donations by the logged-in donor (lean for better performance)
-    const donations = await FoodDonation.find({ donor_id: session.user.id })
-      .select(
-        "food_type quantity pickup_address expiry_date claimed_volunteers image_url volunteer_pool_size status createdAt"
-      )
-      .lean();
-
-    return NextResponse.json(donations, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching donations:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch donations" },
       { status: 500 }
     );
   }
@@ -125,49 +150,41 @@ export async function DELETE(request: NextRequest) {
     const donationId = searchParams.get("donationId");
 
     if (!donationId) {
+      // ✅ Added Validation
       return NextResponse.json(
         { error: "Donation ID is required" },
         { status: 400 }
       );
     }
 
-    // Find the donation and verify ownership
-    const donation = await FoodDonation.findOne({
-      _id: donationId,
-      donor_id: session.user.id,
-    });
-
+    const donation = await FoodDonation.findById(donationId);
     if (!donation) {
       return NextResponse.json(
-        { error: "Donation not found or unauthorized" },
+        { error: "Donation not found" },
         { status: 404 }
       );
     }
 
-    // Notify claimed volunteers if any
-    if (donation.claimed_volunteers?.length > 0) {
-      donation.claimed_volunteers.forEach((volunteerId) => {
-        const volunteerIdStr = volunteerId.toString(); // Convert ObjectId to string
-        const socketId = connectedUsers.get(volunteerIdStr);
-
-        if (socketId) {
-          io.to(socketId).emit("donation_deleted", { donationId });
-          console.log(
-            `Notified volunteer ${volunteerIdStr} about donation deletion`
-          );
-        }
-      });
+    if (donation.donor_id.toString() !== session.user.id) {
+      // ✅ Optimized
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Delete the donation
-    await FoodDonation.deleteOne({ _id: donationId });
+    const volunteerClaims = await VolunteerClaim.find({
+      donation_id: donationId,
+    });
 
-    // Notify donor that the deletion was successful
-    const donorSocketId = connectedUsers.get(session.user.id);
-    if (donorSocketId) {
-      io.to(donorSocketId).emit("donation_removed", { donationId });
-      console.log(`Notified donor ${session.user.id} about donation removal`);
+    if (volunteerClaims.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot delete. Volunteers have already claimed this donation.",
+        },
+        { status: 400 }
+      );
     }
+
+    await FoodDonation.findByIdAndDelete(donationId);
 
     return NextResponse.json(
       { message: "Donation deleted successfully" },
